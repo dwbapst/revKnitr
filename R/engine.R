@@ -1,4 +1,4 @@
-#' An output wrapper for language engine output
+#' An Output Wrapper for Language Engine Output for RevBayes
 #'
 #' If you have designed a language engine, you may call this function in the end
 #' to format and return the text output from your engine.
@@ -9,24 +9,56 @@
 #' case, the arguments \code{code} and \code{extra} are ignored, and the list is
 #' passed to an internal function \code{knitr:::wrap()} to return a character
 #' vector of final output.
+
 #' @import knitr
-#' @param options A list of chunk options. Usually this is just the object
+
+#' @param options 
+#' A list of chunk options. Usually this is just the object
 #'   \code{options} passed to the engine function; see
 #'   \code{\link{knit_engines}}.
-#' @param code Source code of the chunk, to which the output hook
+
+#' @param code 
+#' Source code of the chunk, to which the output hook
 #'   \code{source} is applied, unless the chunk option \code{echo} is \code{FALSE}.
-#' @param out Text output from the engine, to which the hook \code{output}
+
+#' @param out 
+#' Text output from the engine, to which the hook \code{output}
 #'   is applied, unless the chunk option \code{results} is \code{'hide'}
-#' @param extra Any additional text output that you want to include.
+
+#' @param extra 
+#' Any additional text output that you want to include.
+
 #' @return A character string generated from the source code and output using
 #'   the appropriate output hooks.
-#' @export
-#' @examples library(knitr)
-#' engine_output(opts_chunk$merge(list(engine = 'Rscript')), code = '1 + 1', out = '[1] 2')
-#' engine_output(opts_chunk$merge(list(echo = FALSE, engine = 'Rscript')), code = '1 + 1', out = '[1] 2')
+
+
+#' @examples 
+#' library(knitr)
+#' 
+#' engine_output(
+#'    options= opts_chunk$merge(list(engine = rb)), 
+#'    code = '1 + 1', 
+#'    out = '[1] 2'
+#'    )
+#' 
+#' engine_output(
+#'    options = opts_chunk$merge(
+#'       list(echo = FALSE, engine = rb)
+#'       ), 
+#'    code = '1 + 1', 
+#'    out = '[1] 2'
+#'    )
 #'
 #' # expert use only
-#' engine_output(opts_chunk$merge(list(engine = 'python')), out = list(structure(list(src = '1 + 1'), class = 'source'), '2'))
+#' engine_output(
+#'    options = opts_chunk$merge(list(engine = rb)), 
+#'    out = list(
+#'       structure(list(src = '1 + 1'), 
+#'       class = 'source'),
+#'       '2')
+#'    )
+
+#' @export
 engine_output = function(options, code, out, extra = NULL) {
   if (missing(code) && is.list(out)) return(unlist(wrap(out, options)))
   if (!is.logical(options$echo)) code = code[options$echo]
@@ -55,9 +87,11 @@ engine_output = function(options, code, out, extra = NULL) {
 get_engine_opts = function(opts, engine, fallback = '') {
   if (is.list(opts)) opts = opts[[engine]]
   opts %in% fallback
-}
+  }
 
-get_engine_path = function(path, engine) get_engine_opts(path, engine, engine)
+get_engine_path = function(path, engine) {
+  get_engine_opts(path, engine, engine)
+  }
 
 #' RevBayes engine
 #'
@@ -106,7 +140,7 @@ eng_rb <- function(options) {
     # string - path and name for rb history directory
     # default is ".eng_rb.knitr.cache" in working dir
   if(is.null(options$rbHistoryDirPath)){
-    options$rbHistoryDirPath <- ".eng_rb.knitr.history"
+    options$rbHistoryDirPath <- ".eng_rb.knitr.history/"
   }
   #############
   rbOutPath <- paste0(options$rbHistoryDirPath, '/.eng_rb_out')
