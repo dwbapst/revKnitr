@@ -58,40 +58,7 @@
 #'       '2')
 #'    )
 
-#' @export
-engine_output = function(options, code, out, extra = NULL) {
-  if (missing(code) && is.list(out)) return(unlist(wrap(out, options)))
-  if (!is.logical(options$echo)) code = code[options$echo]
-  if (length(code) != 1L) code = knitr:::one_string(code)
-  if (options$engine == 'sas' && length(out) > 1L && !grepl('[[:alnum:]]', out[2]))
-    out = tail(out, -3L)
-  if (length(out) != 1L) out = knitr:::one_string(out)
-  out = sub('([^\n]+)$', '\\1\n', out)
-  # replace the engine names for markup later, e.g. ```Rscript should be ```r
-  options$engine = switch(
-    options$engine, rb = "RevBayes",
-    options$engine
-  )
-  knitr:::one_string(c(
-    if (length(options$echo) > 1L || options$echo) knit_hooks$get('source')(code, options),
-    if (options$results != 'hide' && !knitr:::is_blank(out)) {
-      if (options$engine == 'highlight') out else knitr:::wrap.character(out, options)
-    },
-    extra
-  ))
-}
 
-
-# options$engine.path can be list(name1 = path1, name2 = path2, ...); similarly,
-# options$engine.opts can be list(name1 = opts1, ...)
-get_engine_opts = function(opts, engine, fallback = '') {
-  if (is.list(opts)) opts = opts[[engine]]
-  opts %in% fallback
-  }
-
-get_engine_path = function(path, engine) {
-  get_engine_opts(path, engine, engine)
-  }
 
 #' RevBayes engine
 #'
@@ -234,6 +201,249 @@ eng_rb <- function(options) {
 
 
 
+
+# additional engines
+knit_engines$set(
+  rb = eng_rb
+)
+
+
+
+# engine_output
+
+
+
+
+
+
+#' @export
+engine_output = function(options, code, out, extra = NULL) {
+  if (missing(code) && is.list(out)) return(unlist(wrap(out, options)))
+  if (!is.logical(options$echo)) code = code[options$echo]
+  if (length(code) != 1L) code = knitr:::one_string(code)
+  if (options$engine == 'sas' && length(out) > 1L && !grepl('[[:alnum:]]', out[2]))
+    out = tail(out, -3L)
+  if (length(out) != 1L) out = knitr:::one_string(out)
+  out = sub('([^\n]+)$', '\\1\n', out)
+  # replace the engine names for markup later, e.g. ```Rscript should be ```r
+  options$engine = switch(
+    options$engine, rb = "RevBayes",
+    options$engine
+  )
+  knitr:::one_string(c(
+    if (length(options$echo) > 1L || options$echo) knit_hooks$get('source')(code, options),
+    if (options$results != 'hide' && !knitr:::is_blank(out)) {
+      if (options$engine == 'highlight') out else knitr:::wrap.character(out, options)
+    },
+    extra
+  ))
+}
+
+###########################################################################
+
+# old eng_rb
+
+## RevBayes
+eng_rb = function(options) {
+  # options - variables from knitr - called herein:
+  # options$code - string, the code for that chunk
+  # options$error - logical, should it fail on an error
+  # options$eval - logical, should the code be evaluated
+  # options$engine - should be == 'rb'
+  # options$engine.path - path to rb  
+  #
+  # set rbDiagnosticMode
+  if(is.null(options$rbDiagnosticMode)){
+    options$rbDiagnosticMode <- FALSE
+  }
+  #
+  # early exit if evaluated output not requested
+  if (!options$eval){
+    options$results = 'asis'
+    return(engine_output(options, options$code, ''))
+  }
+  #
+  # set up path to rb
+  rbPath <- knitr:::get_engine_path(options$engine.path, 'rb')
+  # options$engine.opts - opts for engines that should include 'rb'
+  # use get_engine_opts to pull out rb options
+  opts <- get_engine_opts(options$engine.opts, 'rb')
+  # engine specific options
+  #
+  # options$refreshHistoryRB 
+  # logical 
+  # Controls whether previous .eng_rb.knitr.cache files
+  # should be deleted if this is the first rb chunk
+  # If not defined, default is TRUE
+  if(is.null(options$refreshHistoryRB)){
+    options$refreshHistoryRB <- TRUE
+  }
+  # options$rbHistoryDirPath 
+  # string - path and name for rb history directory
+  # default is ".eng_rb.knitr.cache" in working dir
+  if(is.null(options$rbHistoryDirPath)){
+    options$rbHistoryDirPath <- ".eng_rb.knitr.history"
+  }
+  #############
+  rbOutPath <- paste0(options$rbHistoryDirPath, '/.eng_rb_out')
+  rbCodePath <- paste0(options$rbHistoryDirPath, '/.eng_rb_code') 
+  #
+  #if(options$rbDiagnosticMode){
+  #message("rb_chunk_counter = ", rb_chunk_counter(-1) )
+  #}
+  # check (and simultaneously update) rb_chunk_counter()
+  if(rb_chunk_counter() == 1L){
+    # this is the first time an rb code-chunk is run for this document
+    # set prev_out artificially to 13
+    prev_out <- 13
+    #
+    if(dir.exists(options$rbHistoryDirPath) & options$refreshHistoryRB){
+      # need to get rid of old history
+      unlink(options$rbHistoryDirPath, recursive = TRUE)
+    }
+    # once old files are cleared (if they exist)
+    # Set up history directories 
+    dir.create(options$rbHistoryDirPath, showWarnings = FALSE)
+    # get code to run
+    code_to_run <- options$code
+    # change options$refreshHistoryRB
+    options$refreshHistoryRB <- FALSE
+  }else{    
+    # if FALSE, then this isn't the first chunk in a document
+    # error if history dir doesn't already exist (?)
+    if(!dir.exists(options$rbHistoryDirPath)){
+      stop("RevBayes history directory not found at specified path for later rb chunks")
+    }
+    # get length of old out file
+    prev_out <- length(readLines(rbOutPath))
+    # get old code history
+    old_code <- readLines(rbCodePath) 
+    # combine
+    code_to_run <- c(old_code, options$code)
+  }
+  # write code to history file
+  write_utf8(code_to_run, con = rbCodePath)
+  # make a temporary file of rb code to execute
+  # don't need to one-string code
+  tempF <- knitr:::wd_tempfile('.rb', '.Rev')
+  # write to file and add q() line
+  write_utf8(c(code_to_run, "q()"), con = tempF)
+  # setup to delete temporary files for execution when done
+  if(!options$rbDiagnosticMode){
+    on.exit(unlink(tempF), add = TRUE)
+  }
+  # correct order for rb is options + cmdArg + file
+  cmdArg = paste(opts, '-b', tempF)
+  # execute code
+  out = if (options$eval) {
+    message(paste0('running Revbayes with cmd: rb ', cmdArg))
+    tryCatch(
+      system2(rbPath, cmdArg, 
+              stdout = TRUE, 
+              stderr = TRUE, 
+              env = options$engine.env
+      ),
+      error = function(e) {
+        if (!options$error) stop(e)
+        paste('Error in running command rb:')
+      }
+    )
+  } else {''}
+  # chunk option error=FALSE means we need to signal the error
+  if (!options$error && !is.null(attr(out,'status'))) {
+    stop(one_string(out))
+  }
+  # write new out to rb out
+  write_utf8(out, con = rbOutPath)
+  # remove unwanted prev header+code from out
+  out = out[-(1:prev_out)]
+  # remove unwanted leading + trailing white space 
+  out = trimws(out)
+  # remove empty lines
+  out = out[!(out == "")]
+  if(length(out)>1){
+    # add numbers to each line
+    out = paste0("[",1:length(out),"] ",out)
+  }
+  # return output via engine_output
+  engine_output(options, code = options$code, out = out)  
+}
+
+
+
+##########################################################################
+
+# functions that aren't eng_rb from old knitr fork but have rb in it
+
+# additional engines
+knit_engines$set(
+  highlight = eng_highlight, Rcpp = eng_Rcpp, tikz = eng_tikz, dot = eng_dot,
+  c = eng_shlib, fortran = eng_shlib, fortran95 = eng_shlib, asy = eng_dot,
+  cat = eng_cat, asis = eng_asis, stan = eng_stan, rb = eng_rb, block = eng_block,
+  block2 = eng_block2, js = eng_js, css = eng_css, sql = eng_sql, go = eng_go,
+  python = eng_python, julia = eng_julia, sass = eng_sxss, scss = eng_sxss
+)
+
+
+
+
+engine_output = function(options, code, out, extra = NULL) {
+  if (missing(code) && is.list(out)) return(unlist(wrap(out, options)))
+  if (!is.logical(options$echo)) code = code[options$echo]
+  if (length(code) != 1L) code = one_string(code)
+  if (options$engine == 'sas' && length(out) > 1L && !grepl('[[:alnum:]]', out[2]))
+    out = tail(out, -3L)
+  if (length(out) != 1L) out = one_string(out)
+  out = sub('([^\n]+)$', '\\1\n', out)
+  # replace the engine names for markup later, e.g. ```Rscript should be ```r
+  options$engine = switch(
+    options$engine, mysql = 'sql', node = 'javascript', psql = 'sql', Rscript = 'r', rb = "RevBayes",
+    options$engine
+  )
+  if (options$engine == 'stata') {
+    out = gsub('\n+running.*profile.do', '', out)
+    out = sub('...\n+', '', out)
+    out = sub('\n. \nend of do-file\n', '', out)
+  }
+  one_string(c(
+    if (length(options$echo) > 1L || options$echo) knit_hooks$get('source')(code, options),
+    if (options$results != 'hide' && !is_blank(out)) {
+      if (options$engine == 'highlight') out else wrap.character(out, options)
+    },
+    extra
+  ))
+}
+
+
+
+
+
+
+
+
+
+
+
+#####################################################################
+
+# from april's fork
+# no apparent mention of rb
+# why do we need any of this - test this
+
+
+
+# options$engine.path can be list(name1 = path1, name2 = path2, ...); similarly,
+# options$engine.opts can be list(name1 = opts1, ...)
+get_engine_opts = function(opts, engine, fallback = '') {
+  if (is.list(opts)) opts = opts[[engine]]
+  opts %in% fallback
+}
+
+get_engine_path = function(path, engine) {
+  get_engine_opts(path, engine, engine)
+}
+
+
 ## output the code without processing it
 eng_asis = function(options) {
   if (options$echo && options$eval) knitr:::one_string(options$code)
@@ -291,12 +501,6 @@ eng_html_asset = function(prefix, postfix) {
     engine_output(options, options$code, out)
   }
 }
-
-
-# additional engines
-knit_engines$set(
-  rb = eng_rb
-)
 
 get_engine = function(name) {
   fun = knit_engines$get(name)
