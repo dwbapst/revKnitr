@@ -81,7 +81,7 @@ eng_rb <- function(options) {
   # }
   
   # check (and simultaneously update) rb_chunk_counter()
-  if(rb_chunk_counter() == 1L){
+  if(.rb_chunk_counter() == 1L){
     
     # this is the first time an rb code-chunk is run for this document
     # set prev_out artificially to 13
