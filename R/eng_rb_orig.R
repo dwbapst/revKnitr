@@ -1,31 +1,54 @@
 ## RevBayes
-eng_rb = function(options) {
-  # options - variables from knitr - called herein:
+eng_rb <- function(options) {
+  # options - variables from knitr
+  ####
+  # generic options called herein:
   # options$code - string, the code for that chunk
-  # options$error - logical, should it fail on an error
+  # options$error - logical, should knitr fail on an error
   # options$eval - logical, should the code be evaluated
   # options$engine - should be == 'rb'
   # options$engine.path - path to rb  
   #
-  # set rbDiagnosticMode
-  if(is.null(options$rbDiagnosticMode)){
-    options$rbDiagnosticMode <- FALSE
-  }
+  ##########
+  # options for specifically for revbayes
   #
+  # options$rbHistoryDirPath
+    # directory to put history files
+  # options$refreshHistoryRB 
+    # a logical, default is TRUE 
+    # remove existing history files if this is a new knitr doc
+  # options$rbDiagnosticMode
+    # a logical, default is FALSE
+    # controlling whether to run diagnostic mode
+  
+  
+  # options$engine.opts 
+    # opts for engines that should include 'rb'
+  
+  
+  ################################
   # early exit if evaluated output not requested
   if (!options$eval){
     options$results = 'asis'
     return(engine_output(options, options$code, ''))
   }
   #
-  # set up path to rb
-  rbPath <- knitr:::get_engine_path(options$engine.path, 'rb')
-  # options$engine.opts - opts for engines that should include 'rb'
-  # use get_engine_opts to pull out rb options
-  opts <- get_engine_opts(options$engine.opts, 'rb')
-  # engine specific options
+  # now set up path to rb
+  rbPath <- RevKnitr::get_rb_path(options$engine.path)
   #
-  # options$refreshHistoryRB 
+  ####
+  # get / check RevBayes engine specific options
+  #
+  # use get_engine_opts to pull out rb options (see above)
+  opts <- get_engine_opts(options$engine.opts, 'rb')
+  #
+  # rbDiagnosticMode - a logical option
+  # set rbDiagnosticMode if not already set
+  if(is.null(options$rbDiagnosticMode)){
+    options$rbDiagnosticMode <- FALSE
+  }
+  #
+  # options$refreshHistoryRB - logical
   # logical 
   # Controls whether previous .eng_rb.knitr.cache files
   # should be deleted if this is the first rb chunk
@@ -38,6 +61,7 @@ eng_rb = function(options) {
   # default is ".eng_rb.knitr.cache" in working dir
   if(is.null(options$rbHistoryDirPath)){
     options$rbHistoryDirPath <- ".eng_rb.knitr.history"
+    # should the above have a '/' or not?
   }
   #############
   rbOutPath <- paste0(options$rbHistoryDirPath, '/.eng_rb_out')
@@ -123,3 +147,4 @@ eng_rb = function(options) {
   # return output via engine_output
   engine_output(options, code = options$code, out = out)  
 }
+d 
