@@ -1,35 +1,107 @@
+#' A \code{knitr} engine for RevBayes
+#' 
+#' This function provides users with a way to execute code written
+#' from the Bayesian phylogenetic program RevBayes as knitted chunks 
+#' in a document, such as a chunk in a n ]code{rmarkdown} chunk.
 
+#' @details
+#' There are a number of limitations of RevBayes that make this execution difficult:
+#' there is presently no way to save environments and reload them across RevBayes instances,
+#' and no apparent way to keep a RevBayes session open while getting the \code{stdout}, and
+#' telling R that the process has terminated.
 
-## RevBayes
+#' @param options Variables that can be specified within \code{knitr} chunk
+#' headers to control how RevBayes code is executed. 
+#' Those relevant to use \code{eng_rb} can be broken into three groups:
+#' \item{Generic Options}{
+
+#' \item{options$code}{A string; the code for that chunk.}
+#' \item{options$error}{A logical; should knitr fail on an error.}
+#' \item{options$eval}{A logical; should the code be evaluated.}
+
+#' }
+
+#' \item{Generic Options to specify when using RevBayes}{
+
+#' \item{options$engine}{A string; Should be 'rb' to use RevBayes}
+#' \item{options$engine.path}{A string; The path to the rb executable if not in the PATH}
+#' \item{options$engine.opts}{A string; Command-line modifications for when rb is executed}
+
+#' }
+
+#' \item{options for specifically for revbayes}{
+
+#' \item{options$rbHistoryDirPath}{A string giving the path to the
+#' directory where history files will be stored as RevBayes code is crunched.
+#' The default path is ".eng_rb.knitr.cache" in the current working directory.
+#' }
+
+#' \item{options$refreshHistoryRB}{A logical. If not defined, the default
+#' is \code{TRUE}. If \code{options$refreshHistoryRB = TRUE} and the hidden
+#' chunk count function suggests this is the first RevBayes chunk
+#' of the \code{knitr} document being knitted, then existing history files
+#' found in \code{options$rbHistoryDirPath} from previous RevBayes analyses
+#' using \code{knitr} will be removed. 
+#' }
+
+#' \item{options$rbDiagnosticMode}{A logical; default is \code{FALSE}. 
+#' This option controlls whether to run diagnostic mode to
+#' identify issues with the RevBayes engine.
+#' }
+
+#' }
+
+#' @return
+#' Output from applying RevBayes to the input code.
+
+#' @seealso
+#' \code{\link{knitr::engine_output}}
+
+#' @author April Wright, David W. Bapst
+
+#' @examples
+#' # no examples yet
+
+#' @importFrom xfun write_utf8
+
+#' @name eng_rb
+#' @rdname eng_rb
+#' @export
 eng_rb <- function(options) {
-  
+  ## knitr engine for RevBayes
+    
   ###########################
   # options - variables given in knitr chunk headers
   #######################
   
+  ##############
   # generic options called by eng_rb
-  #
+  
   # options$code - string, the code for that chunk
   # options$error - logical, should knitr fail on an error
   # options$eval - logical, should the code be evaluated
   
+  ############
   # options that are generic but related to revbayes
-  #
+  
   # options$engine - should be == 'rb'
   # options$engine.path - path to rb  
   # options$engine.opts - command-line modifications for when rb is executed
   
+  ############
   # options for specifically for revbayes
-  #
+  
   # options$rbHistoryDirPath
     # string - path to directory for rb history files
     # default is ".eng_rb.knitr.cache" in working dir
       # may need "/" at the end??
+  
   # options$refreshHistoryRB 
     # a logical - If not defined, default is TRUE 
     # if TRUE & this is a new knitr document, remove existing history files 
     # Thus controls whether previous .eng_rb.knitr.cache files
       # should be deleted if this is the first rb chunk
+  
   # options$rbDiagnosticMode
     # a logical, default is FALSE
     # controlling whether to run diagnostic mode

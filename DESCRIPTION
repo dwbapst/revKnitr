@@ -6,6 +6,8 @@ Date: 2019-11-15
 Author: April M. Wright and David W. Bapst
 Maintainer: April Wright <wright.aprilm@gmail.com>
 Depends: knitr
+Imports: xfun
+Encoding: UTF-8
 Description: This is an additional engine meant to be used with the KnitR R Package. It allows users to generate markdown documents and websites using the Rev language. It also allows for interactive coding with Rev in the RStudio interface.
 License: GPL-3
 RoxygenNote: 6.1.1
