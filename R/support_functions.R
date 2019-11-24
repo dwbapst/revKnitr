@@ -18,10 +18,16 @@ rb_knit_counter = function(init = 0L) {
 
 # options$engine.path can be list(name1 = path1, name2 = path2, ...); similarly,
 # options$engine.opts can be list(name1 = opts1, ...)
-get_rb_opts = function(opts, engine = 'rb' , fallback = '') {
+get_rb_opts = function(opts, 
+                       engine = 'rb', 
+                       fallback = ''
+                       ){
   if (is.list(opts)) opts = opts[[engine]]
   opts %n% fallback
 }
+
+# if LHS is NULL, return the RHS
+`%n%` = function(x, y) if (is.null(x)) y else x
 
 # tempfile under the current working directory
 rb_wd_tempfile = function(...) basename(tempfile(tmpdir = '.', ...))
