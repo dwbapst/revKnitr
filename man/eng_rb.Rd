@@ -10,17 +10,20 @@ eng_rb(options)
 \item{options}{Variables that can be specified within \code{knitr} chunk
 headers to control how RevBayes code is executed. 
 Those relevant to use \code{eng_rb} can be broken into three groups:
-\item{Generic Options}{
+}
+\emph{Generic Options}
+\describe{
 \item{options$code}{A string; the code for that chunk.}
 \item{options$error}{A logical; should knitr fail on an error.}
 \item{options$eval}{A logical; should the code be evaluated.}
-}
-\item{Generic Options to specify when using RevBayes}{
+\emph{Generic Options to specify when using RevBayes}
+\describe{
 \item{options$engine}{A string; Should be 'rb' to use RevBayes}
 \item{options$engine.path}{A string; The path to the rb executable if not in the PATH}
 \item{options$engine.opts}{A string; Command-line modifications for when rb is executed}
 }
-\item{options for specifically for revbayes}{
+\emph{options for specifically for revbayes}
+\describe{
 \item{options$rbHistoryDirPath}{A string giving the path to the
 directory where history files will be stored as RevBayes code is crunched.
 The default path is ".eng_rb.knitr.cache" in the current working directory.
