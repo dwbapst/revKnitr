@@ -1,5 +1,6 @@
 # rb chunk counter
 
+# basic counter
 rb_knit_counter = function(init = 0L) {
   n = init
   function(reset = FALSE) {
@@ -10,7 +11,13 @@ rb_knit_counter = function(init = 0L) {
 }
 
 # count revbayes chunks
-.rb_chunk_counter <<- rb_knit_counter(1L)
+
+# a small counter 
+
+
+# export
+rb_chunk_counter <- rb_knit_counter(1L)
+
 
 ###########################################################
 # the following internal support functions shamelessly stolen from knitr and lightly rebranded:
