@@ -12,10 +12,13 @@ rb_knit_counter = function(init = 0L) {
 
 # count revbayes chunks
 
-# a small counter 
-
-
-# export
+#' Count the Number of times RB Chunk Has Been Called
+#' 
+#' a small counter 
+#' 
+#' @param init It's just 1L
+#' 
+#' @export export
 rb_chunk_counter <- rb_knit_counter(1L)
 
 
